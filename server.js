@@ -89,21 +89,28 @@ app.get("/redirect", (req, res) => {
 
   const authorize_uri = "https://github.com/login/oauth/authorize";
   const redirectUri = `https://hackday-github-profile-pic.glitch.me/oauth/redirect?userId=${userId}`;
-  const state = "ABACDESAFASFDADFADF"; // TODO: handle state verification
+  const csrfState = Math.random().toString(36).substring(7);
+  res.cookie("csrfState", csrfState, { maxAge: 60000 });
   const scope = "public_repo";
 
-  const githubOauthUrl = `${authorize_uri}?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`;
+  const githubOauthUrl = `${authorize_uri}?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${csrfState}`;
 
   res.redirect(githubOauthUrl);
 });
 
 app.get("/oauth/redirect", (req, res) => {
   console.log("redirect back from github");
-  const userId = req.query.userId; // Probably better to use state
-  const requestToken = req.query.code;
+  const { userId, code, state } = req.query;
+  const { csrfState } = req.cookies;
+
+  if (state && csrfState && state !== csrfState) {
+    res.status(422).send(`Invalid state: ${csrfState} != ${state}`);
+    return;
+  }
+
   axios({
     method: "post",
-    url: `https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${requestToken}`,
+    url: `https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`,
     headers: {
       accept: "application/json",
     },
