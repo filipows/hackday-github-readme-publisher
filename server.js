@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const axios = require("axios");
 const app = express();
 const fs = require("fs");
+const cookieParser = require("cookie-parser");
+
 const GithubUploader = require("./github-uploader.js");
 const { isValidPostRequest } = require("./signature-verification");
 
@@ -13,6 +15,7 @@ app.use(
     },
   })
 );
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const clientId = process.env.CLIENT_ID;
@@ -88,9 +91,10 @@ app.get("/redirect", (req, res) => {
   };
 
   const authorize_uri = "https://github.com/login/oauth/authorize";
-  const redirectUri = `https://hackday-github-profile-pic.glitch.me/oauth/redirect?userId=${userId}`;
+  const redirectUri = `https://hackday-github-profile-pic.glitch.me/oauth/redirect`;
   const csrfState = Math.random().toString(36).substring(7);
   res.cookie("csrfState", csrfState, { maxAge: 60000 });
+  res.cookie("userId", userId, { maxAge: 60000 });
   const scope = "public_repo";
 
   const githubOauthUrl = `${authorize_uri}?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${csrfState}`;
@@ -100,8 +104,8 @@ app.get("/redirect", (req, res) => {
 
 app.get("/oauth/redirect", (req, res) => {
   console.log("redirect back from github");
-  const { userId, code, state } = req.query;
-  const { csrfState } = req.cookies;
+  const { code, state } = req.query;
+  const { userId, csrfState } = req.cookies;
 
   if (state && csrfState && state !== csrfState) {
     res.status(422).send(`Invalid state: ${csrfState} != ${state}`);
