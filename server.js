@@ -86,15 +86,13 @@ app.get("/redirect", (req, res) => {
   // console.log("redirect req.body", req.body);
   const userId = req.query.user;
   const canvaState = req.query.state;
-  USERS[userId] = {
-    canvaState,
-  };
 
   const authorize_uri = "https://github.com/login/oauth/authorize";
   const redirectUri = `https://hackday-github-profile-pic.glitch.me/oauth/redirect`;
   const csrfState = Math.random().toString(36).substring(7);
   res.cookie("csrfState", csrfState, { maxAge: 60000 });
   res.cookie("userId", userId, { maxAge: 60000 });
+  res.cookie("canvaState", canvaState, { maxAge: 60000 });
   const scope = "public_repo";
 
   const githubOauthUrl = `${authorize_uri}?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${csrfState}`;
@@ -105,7 +103,7 @@ app.get("/redirect", (req, res) => {
 app.get("/oauth/redirect", (req, res) => {
   console.log("redirect back from github");
   const { code, state } = req.query;
-  const { userId, csrfState } = req.cookies;
+  const { userId, csrfState, canvaState } = req.cookies;
 
   if (state && csrfState && state !== csrfState) {
     res.status(422).send(`Invalid state: ${csrfState} != ${state}`);
@@ -124,7 +122,6 @@ app.get("/oauth/redirect", (req, res) => {
         throw new Error("Error while authenticating");
       }
       const accessToken = response.data.access_token;
-      const canvaState = USERS[userId].canvaState;
       USERS[userId] = {
         accessToken,
       };
