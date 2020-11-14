@@ -1,0 +1,21 @@
+{
+  "name": "hackday-github-readme-publisher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "github-uploader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite3": "^4.1.1",
+    "axios": "^0.21.0",
+    "@octokit/rest": "^18.0.7",
+    "globby": "^11.0.1",
+    "fs-extra": "^9.0.1",
+    "rimraf": "^3.0.2"
+  }
+}
