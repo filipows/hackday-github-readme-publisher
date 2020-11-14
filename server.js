@@ -1,3 +1,7 @@
+// TODO: 
+//  - /configuration should check validity of the tokne
+//  - implement token persistency
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
@@ -7,6 +11,7 @@ const cookieParser = require("cookie-parser");
 
 const GithubUploader = require("./github-uploader.js");
 const { isValidPostRequest } = require("./signature-verification");
+const user = require("./user");
 
 app.use(
   express.json({
@@ -24,10 +29,8 @@ const canvaClientSecret = process.env.CANVA_CLIENT_SECRET;
 
 app.use(express.static("public"));
 
-const USERS = {};
-
 function isAuthenticated(userId) {
-  return USERS[userId] && USERS[userId].accessToken;
+  return user.getUserToken(userId);
 }
 
 app.post("/publish/resources/upload", async (request, response) => {
@@ -50,7 +53,8 @@ app.post("/publish/resources/upload", async (request, response) => {
   }
 
   console.log("publish", request.body, request.query);
-  const uploader = new GithubUploader(USERS[userId].accessToken);
+  const userToken = user.getUserToken(userId);
+  const uploader = new GithubUploader(userToken);
   const urlToProfileRepo = await uploader.upload(imgUrl, imgName);
 
   response.send({
@@ -122,9 +126,7 @@ app.get("/oauth/redirect", (req, res) => {
         throw new Error("Error while authenticating");
       }
       const accessToken = response.data.access_token;
-      USERS[userId] = {
-        accessToken,
-      };
+      user.setUserToken(userId, accessToken);
       res.redirect(
         `https://canva.com/apps/configured?success=true&state=${canvaState}`
       );
