@@ -10,7 +10,7 @@ const fs = require("fs");
 const cookieParser = require("cookie-parser");
 
 const GithubUploader = require("./github-uploader.js");
-const { isValidPostRequest } = require("./signature-verification");
+const { isValidPostRequest, isValidGetRequest } = require("./signature-verification");
 const user = require("./user");
 
 app.use(
@@ -87,6 +87,12 @@ app.post("/configuration", async (request, response) => {
 });
 
 app.get("/redirect", (req, res) => {
+  if (!isValidGetRequest(canvaClientSecret, req)) {
+    console.log("invaid signature");
+    res.sendStatus(401);
+    return;
+  }  
+
   // console.log("redirect req.body", req.body);
   const userId = req.query.user;
   const canvaState = req.query.state;
